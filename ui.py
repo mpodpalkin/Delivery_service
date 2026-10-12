@@ -19,12 +19,7 @@ class ConsoleUI:
     def __init__(self, service: OrderService):
         self._service = service
 
-    # ========================================================================
-    # Главный цикл
-    # ========================================================================
-
     def run(self) -> None:
-        """Главный цикл меню."""
         while True:
             self._show_menu()
             choice = self._get_int_input("Выберите пункт меню (1-6): ", 1, 6)
@@ -59,20 +54,17 @@ class ConsoleUI:
         print("6. Завершить работу")
         print("═" * 50)
 
-    # ========================================================================
     # Пункт 1: Создание заказа (полный поток)
-    # ========================================================================
-
     def _create_order_flow(self) -> None:
         """Полный поток создания заказа: клиент → адрес → товары → доставка → курьер."""
         print("═" * 50)
         print("СОЗДАНИЕ НОВОГО ЗАКАЗА")
         print("═" * 50)
 
-        # --- Шаг 1: Выбор клиента ---
+        # Шаг 1: Выбор клиента
         clients = self._service.get_all_clients()
         if not clients:
-            print("❌ Нет зарегистрированных клиентов")
+            print("Нет зарегистрированных клиентов")
             return
 
         print("\nШаг 1/5. Выберите клиента:")
@@ -80,43 +72,43 @@ class ConsoleUI:
         if client is None:
             return
 
-        # --- Шаг 2: Ввод адреса ---
+        # Шаг 2: Ввод адреса
         print("\nШаг 2/5. Ввод адреса")
         address = input("Введите адрес доставки: ").strip()
         if not address:
-            print("❌ Адрес не может быть пустым")
+            print("Адрес не может быть пустым")
             return
 
         # Создаём заказ
         order = self._service.create_order(client, address)
-        print(f"\n✅ Заказ #{order.order_id} создан")
+        print(f"\nЗаказ #{order.order_id} создан")
 
-        # --- Шаг 3: Добавление товаров ---
+        # Шаг 3: Добавление товаров
         print("\nШаг 3/5. Добавление товаров")
         self._add_items_to_order(order)
 
         if not order.items:
-            print("⚠️ Заказ создан без товаров. Вы можете добавить их позже.")
+            print("Заказ создан без товаров. Вы можете добавить их позже.")
 
-        # --- Шаг 4: Выбор способа доставки ---
+        # Шаг 4: Выбор способа доставки
         print("\nШаг 4/5. Выбор способа доставки")
         delivery_method = self._select_delivery_method()
         if delivery_method is None:
-            print("⚠️ Способ доставки не выбран. Вы можете выбрать его позже.")
+            print("️Способ доставки не выбран. Вы можете выбрать его позже.")
         else:
             order.set_delivery_method(delivery_method)
-            print(f"\n✅ Способ доставки: {delivery_method}")
+            print(f"\n Способ доставки: {delivery_method}")
             print(f"   Стоимость доставки: {order.get_total_cost() - order.get_base_cost():.2f} руб.")
             print(f"   Срок: {delivery_method.get_estimated_time(order.created_at)}")
 
-            # --- Шаг 5: Назначение курьера (если требуется) ---
+            # Шаг 5: Назначение курьера (если требуется)
             if delivery_method.requires_courier():
                 print("\nШаг 5/5. Назначение курьера")
                 self._assign_courier_to_order(order)
             else:
-                print("\n✅ Курьер не требуется (самовывоз)")
+                print("\nКурьер не требуется (самовывоз)")
 
-        # --- Итог ---
+        # Итог
         print("\n" + "─" * 50)
         print("ЗАКАЗ СОЗДАН:")
         print(order.get_info())
@@ -125,13 +117,13 @@ class ConsoleUI:
         """Цикл добавления позиций в заказ."""
         catalog = self._service.get_product_catalog()
         if not catalog:
-            print("⚠️ Каталог товаров пуст")
+            print("Каталог товаров пуст")
             return
 
         while True:
             print("\nТовары в каталоге:")
             for i, (name, price) in enumerate(catalog, 1):
-                print(f"  {i}. {name} — {price:.2f} руб.")
+                print(f"  {i}. {name} - {price:.2f} руб.")
             print("  0. Завершить добавление")
 
             choice = self._get_int_input("Выберите товар: ", 0, len(catalog))
@@ -140,7 +132,7 @@ class ConsoleUI:
 
             product = self._service.get_product_by_index(choice - 1)
             if product is None:
-                print("❌ Некорректный выбор")
+                print("Некорректный выбор")
                 continue
 
             name, price = product
@@ -151,9 +143,9 @@ class ConsoleUI:
             item = OrderItem(name, quantity, price)
             try:
                 order.add_item(item)
-                print(f"✅ Добавлено: {item}")
+                print(f" Добавлено: {item}")
             except ValueError as e:
-                print(f"❌ Ошибка: {e}")
+                print(f" Ошибка: {e}")
 
     def _select_delivery_method(self) -> Optional[DeliveryMethod]:
         """Выбор способа доставки."""
@@ -173,24 +165,24 @@ class ConsoleUI:
         """Назначение курьера на заказ."""
         all_couriers = self._service.get_all_couriers()
         if not all_couriers:
-            print("❌ Нет зарегистрированных курьеров")
+            print(" Нет зарегистрированных курьеров")
             return
 
         print("\nСписок курьеров:")
         for i, courier in enumerate(all_couriers, 1):
-            status = "🟢 свободен" if courier.is_available else "🔴 занят"
+            status = " свободен" if courier.is_available else " занят"
             print(f"  {i}. {courier.name} (тел: {courier.phone}) — {status}")
 
         available = self._service.get_available_couriers()
 
         if not available:
-            print("\n⚠️ Все курьеры заняты")
-            print("💡 Курьеры освобождаются после доставки или отмены заказа")
+            print("\n Все курьеры заняты")
+            print(" Курьеры освобождаются после доставки или отмены заказа")
             choice = self._get_int_input(
                 "Назначить курьера позже? (0 - да, пропустить): ", 0, 0
             )
             if choice is None or choice == 0:
-                print("⚠️ Заказ создан без курьера. Назначьте его позже через меню.")
+                print("️ Заказ создан без курьера. Назначьте его позже через меню.")
                 return
         else:
             print(f"\nСвободных курьеров: {len(available)}")
@@ -199,21 +191,18 @@ class ConsoleUI:
                 "Выберите курьера (номер из списка выше): ", 0, len(all_couriers)
             )
             if choice is None or choice == 0:
-                print("⚠️ Курьер не назначен. Вы можете назначить его позже.")
+                print("️ Курьер не назначен. Вы можете назначить его позже.")
                 return
 
         courier = all_couriers[choice - 1]
 
         try:
             order.assign_courier(courier)
-            print(f"✅ Курьер {courier.name} назначен")
+            print(f" Курьер {courier.name} назначен")
         except ValueError as e:
-            print(f"❌ Ошибка: {e}")
+            print(f" Ошибка: {e}")
 
-    # ========================================================================
     # Пункт 2: Список заказов
-    # ========================================================================
-
     def _view_orders(self) -> None:
         """Показывает список всех заказов."""
         print("═" * 50)
@@ -228,10 +217,7 @@ class ConsoleUI:
         for order in orders:
             print(f"\n{order}")
 
-    # ========================================================================
     # Пункт 3: Изменение статуса
-    # ========================================================================
-
     def _change_status_flow(self) -> None:
         """Изменение статуса заказа."""
         print("═" * 50)
@@ -248,7 +234,7 @@ class ConsoleUI:
         valid_transitions = order.get_available_transitions()
 
         if not valid_transitions:
-            print("❌ Из этого статуса нельзя перейти никуда")
+            print(" Из этого статуса нельзя перейти никуда")
             return
 
         print("\nДоступные переходы:")
@@ -264,18 +250,15 @@ class ConsoleUI:
 
         try:
             order.change_status(new_status)
-            print(f"\n✅ Статус изменён на: {new_status.value}")
+            print(f"\n Статус изменён на: {new_status.value}")
 
             # Если курьер освобождён — сообщаем
             if new_status in (OrderStatus.DELIVERED, OrderStatus.CANCELLED):
-                print("🟢 Курьер освобождён")
+                print(" Курьер освобождён")
         except ValueError as e:
-            print(f"❌ Ошибка: {e}")
+            print(f" Ошибка: {e}")
 
-    # ========================================================================
     # Пункт 4: Информация по заказу
-    # ========================================================================
-
     def _view_order_info(self) -> None:
         """Просмотр полной информации по заказу."""
         print("═" * 50)
@@ -288,10 +271,7 @@ class ConsoleUI:
 
         print("\n" + order.get_info())
 
-    # ========================================================================
     # Пункт 5: Список курьеров
-    # ========================================================================
-
     def _view_couriers(self) -> None:
         """Показывает всех курьеров и их статусы."""
         print("═" * 50)
@@ -304,7 +284,7 @@ class ConsoleUI:
             return
 
         for i, courier in enumerate(couriers, 1):
-            status = "🟢 свободен" if courier.is_available else "🔴 занят"
+            status = " свободен" if courier.is_available else " занят"
             print(f"  {i}. {courier.name} (тел: {courier.phone}) — {status}")
 
         # Статистика
@@ -312,25 +292,19 @@ class ConsoleUI:
         total = len(couriers)
         print(f"\nВсего: {total} | Свободных: {available} | Занятых: {total - available}")
 
-    # ========================================================================
     # Пункт 6: Выход
-    # ========================================================================
-
     @staticmethod
     def _exit() -> None:
         """Завершает работу программы."""
         print("\nДо свидания!")
         exit(0)
 
-    # ========================================================================
     # Вспомогательные методы
-    # ========================================================================
-
     def _select_order(self) -> Optional[Order]:
         """Выбор заказа из списка."""
         orders = self._service.get_all_orders()
         if not orders:
-            print("❌ Нет заказов")
+            print(" Нет заказов")
             return None
 
         print("\nСписок заказов:")
@@ -343,7 +317,7 @@ class ConsoleUI:
 
         order = self._service.get_order(order_id)
         if order is None:
-            print(f"❌ Заказ #{order_id} не найден")
+            print(f" Заказ #{order_id} не найден")
             return None
 
         return order
@@ -368,6 +342,6 @@ class ConsoleUI:
                 value = int(input(prompt))
                 if min_val <= value <= max_val:
                     return value
-                print(f"❌ Введите число от {min_val} до {max_val}")
+                print(f" Введите число от {min_val} до {max_val}")
             except ValueError:
-                print("❌ Введите целое число")
+                print(" Введите целое число")
